@@ -4,6 +4,7 @@ const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { default: mongoose } = require('mongoose');
 const nodemailer = require('nodemailer');
+const getOrSetCache=require('../Redis/redis')
 
 // Define the sendMail function
 const sendMail = (to, subject, text) => {
@@ -126,31 +127,35 @@ exports.login = async (req, res) => {
 }
 
 exports.authenticate = async (req, res) => {
-  if(req.user){
-    const email=req.user.email;
-    console.log('asdksahfjkgsadljkfhjksdhfjkds',req.user)
-    return res.json({email})
+  if (req.user) {
+    const email = req.user.email;
+    console.log('asdksahfjkgsadljkfhjksdhfjkds', req.user)
+    return res.json({ email })
   }
   return res.status(401).json({ error: 'Invalid or missing token' });
 }
 
 exports.foodCategory = async (req, res) => {
   try {
-    const collection = mongoose.connection.collection('foodCategory')
+    const data = await getOrSetCache('foodCategory', async () => {
+      const collection = mongoose.connection.collection('foodCategory');
+      return await collection.find({}).toArray();
+    });
 
-    const data = await collection.find({}).toArray()
-    return res.json(data)
-  }
-  catch (error) {
+    return res.json(data);
+  } catch (error) {
+    console.log("server errpr : ",error)
     res.status(500).json({ error: 'Server error' });
   }
-}
+};
 
 exports.fooditem = async (req, res) => {
   try {
-    const collection = mongoose.connection.collection('food_items')
+    const data = await getOrSetCache("fooditem", async () => {
+      const collection = mongoose.connection.collection('food_items')
+      return await collection.find({}).toArray()
+    });
 
-    const data = await collection.find({}).toArray()
     return res.json(data)
   }
   catch (error) {
