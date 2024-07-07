@@ -61,7 +61,6 @@ exports.register = async (req, res) => {
   const { email, password, name, location } = req.body
 
   try {
-
     const existingUser = await User.findOne({ email: req.body.email })
 
     if (existingUser) {
