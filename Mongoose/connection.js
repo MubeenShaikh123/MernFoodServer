@@ -10,7 +10,6 @@ const connect=async() => {
     }
     catch(err){
         console.log(`Mongodb is not connected`)
-        console.log(err)
         process.exit(1)
     }
 }

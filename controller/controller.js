@@ -119,7 +119,7 @@ exports.login = async (req, res) => {
   if (!isMatch) {
     return res.status(400).json({ error: [{ field: "password", message: 'Incorrect password' }] })
   }
-  const token = jwt.sign({ id: document._id, email: document.email }, process.env.JWT, { expiresIn: '1h' });
+  const token = jwt.sign({ id: document._id, email: document.name }, process.env.JWT, { expiresIn: '1h' });
   const name = document.name
   return res.json({ token, email, name })
 
@@ -128,7 +128,6 @@ exports.login = async (req, res) => {
 exports.authenticate = async (req, res) => {
   if (req.user) {
     const email = req.user.email;
-    console.log('asdksahfjkgsadljkfhjksdhfjkds', req.user)
     return res.json({ email })
   }
   return res.status(401).json({ error: 'Invalid or missing token' });
@@ -143,7 +142,6 @@ exports.foodCategory = async (req, res) => {
 
     return res.json(data);
   } catch (error) {
-    console.log("server errpr : ",error)
     res.status(500).json({ error: 'Server error' });
   }
 };
