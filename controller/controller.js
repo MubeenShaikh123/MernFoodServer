@@ -119,7 +119,7 @@ exports.login = async (req, res) => {
   if (!isMatch) {
     return res.status(400).json({ error: [{ field: "password", message: 'Incorrect password' }] })
   }
-  const token = jwt.sign({ id: document._id, email: document.name }, process.env.JWT, { expiresIn: '1h' });
+  const token = jwt.sign({ id: document._id, email: document.email }, process.env.JWT, { expiresIn: '1h' });
   const name = document.name
   return res.json({ token, email, name })
 
@@ -455,6 +455,7 @@ exports.addMenu = async (req, res) => {
 };
 
 exports.removeMenu = async (req, res) => {
+  console.log("req.body",req.body);
   if (!req.body || !req.body.username || !req.body.name) {
     return res.status(400).json({ error: [{ message: 'Invalid request format' }] });
   }
