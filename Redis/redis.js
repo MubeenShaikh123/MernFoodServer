@@ -38,7 +38,7 @@
 // directly fetchingdata until redis is implemented
 const getorsetcache = async (key, cb) => {
     try {
-        console.log(`Fetching data directly for key: ${key}`);
+        // console.log(`Fetching data directly for key: ${key}`);
         const data = await cb();
         return data;
     } catch (error) {

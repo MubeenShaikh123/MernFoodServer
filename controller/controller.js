@@ -405,28 +405,27 @@ exports.addMenu = async (req, res) => {
   }
 
   const { username, cartData } = req.body;
-  console.log("cartData: ", cartData);
 
   try {
     // Check if the user already has a menu
     let existingMenu = await Menu.findOne({ username });
 
     const updateExistingMenu = async (menu) => {
-      // Iterate over existing cartData
-      menu.cartData.forEach((existingItem, index) => {
-        // Find an object with similar name in the existing cartData
-        const matchingIndex = cartData.findIndex(newItem => 
-          ((newItem.name === existingItem.name) && (newItem.size === existingItem.size))
+      // Iterate over cartData to add each item one by one
+      cartData.forEach(newItem => {
+        // Check if there is an existing item with the same name and size
+        const existingItemIndex = menu.cartData.findIndex(
+          existingItem => (existingItem.name === newItem.name) && (existingItem.size === newItem.size)
         );
 
-        if (matchingIndex !== -1) {
-          // Remove the existing item with the same name and size
-          menu.cartData.splice(index, 1);
+        // If an existing item is found, remove it
+        if (existingItemIndex !== -1) {
+          menu.cartData.splice(existingItemIndex, 1);
         }
+        
+        // Add the new item
+        menu.cartData.push(newItem);
       });
-
-      // Push the new cartData to the existing menu's cartData array
-      menu.cartData.push(...cartData);
 
       // Save the updated menu to the database
       await menu.save();
@@ -454,29 +453,28 @@ exports.addMenu = async (req, res) => {
   }
 };
 
-
 exports.removeMenu = async (req, res) => {
-  console.log("req.body", req.body);
-  if (!req.body || !req.body.username || !req.body.name) {
+  if (!req.body || !req.body.username || !req.body.item || !req.body.item.name || !req.body.item.size) {
     return res.status(400).json({ error: [{ message: 'Invalid request format' }] });
   }
 
-  const { username, name } = req.body;
+  const { username, item } = req.body;
+  const { name, size } = item;
 
   try {
     // Find the menu for the specified user
     const existingMenu = await Menu.findOne({ username });
 
     if (existingMenu) {
-      // Remove items with the specified name from cartData
-      existingMenu.updateOne({ $pull: { cartData: { name } } })
+      // Remove items with the specified name and size from cartData
+      existingMenu.updateOne({ $pull: { cartData: { name, size } } })
         .then((result) => {
           if (result.modifiedCount > 0) {
             // If any item was removed, return the updated menu
             res.json(existingMenu);
           } else {
             // Else, return no matching item was found
-            res.json({ message: 'No item with the specified name found in the cartData' });
+            res.json({ message: 'No item with the specified name and size found in the cartData' });
           }
         })
         .catch((error) => {
@@ -489,6 +487,7 @@ exports.removeMenu = async (req, res) => {
     res.status(500).json({ error: [{ message: err.message || 'Internal Server Error' }] });
   }
 };
+
 
 exports.checkout = async (req, res) => {
   const { username } = req.params;
