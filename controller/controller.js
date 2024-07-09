@@ -4,7 +4,7 @@ const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { default: mongoose } = require('mongoose');
 const nodemailer = require('nodemailer');
-const getOrSetCache=require('../Redis/redis')
+const getOrSetCache = require('../Redis/redis')
 
 // Define the sendMail function
 const sendMail = (to, subject, text) => {
@@ -405,34 +405,38 @@ exports.addMenu = async (req, res) => {
   }
 
   const { username, cartData } = req.body;
+  console.log("cartData: ", cartData);
 
   try {
     // Check if the user already has a menu
     let existingMenu = await Menu.findOne({ username });
 
-    if (existingMenu) {
+    const updateExistingMenu = async (menu) => {
       // Iterate over existing cartData
-      existingMenu.cartData.forEach((existingItem, index) => {
+      menu.cartData.forEach((existingItem, index) => {
         // Find an object with similar name in the existing cartData
-        const matchingIndex = cartData.findIndex(newItem => newItem.name === existingItem.name);
+        const matchingIndex = cartData.findIndex(newItem => 
+          ((newItem.name === existingItem.name) && (newItem.size === existingItem.size))
+        );
 
         if (matchingIndex !== -1) {
-          // Remove the existing item with the same name
-          existingMenu.cartData.splice(index, 1);
+          // Remove the existing item with the same name and size
+          menu.cartData.splice(index, 1);
         }
       });
 
       // Push the new cartData to the existing menu's cartData array
-      existingMenu.cartData.push(...cartData);
+      menu.cartData.push(...cartData);
 
       // Save the updated menu to the database
-      existingMenu.save()
-        .then(updatedMenu => {
-          res.json(updatedMenu);
-        })
-        .catch(error => {
-          res.status(500).json({ error: [{ message: error.message || 'Error updating menu data' }] });
-        });
+      await menu.save();
+      return menu;
+    };
+
+    if (existingMenu) {
+      updateExistingMenu(existingMenu)
+        .then(updatedMenu => res.json(updatedMenu))
+        .catch(error => res.status(500).json({ error: [{ message: error.message || 'Error updating menu data' }] }));
     } else {
       // Create a new menu with the provided data
       const newMenu = new Menu({
@@ -442,20 +446,17 @@ exports.addMenu = async (req, res) => {
 
       // Save the menu to the database
       newMenu.save()
-        .then(savedMenu => {
-          res.json(savedMenu);
-        })
-        .catch(error => {
-          res.status(500).json({ error: [{ message: error.message || 'Error saving menu data' }] });
-        });
+        .then(savedMenu => res.json(savedMenu))
+        .catch(error => res.status(500).json({ error: [{ message: error.message || 'Error saving menu data' }] }));
     }
   } catch (err) {
     res.status(500).json({ error: [{ message: err.message || 'Internal Server Error' }] });
   }
 };
 
+
 exports.removeMenu = async (req, res) => {
-  console.log("req.body",req.body);
+  console.log("req.body", req.body);
   if (!req.body || !req.body.username || !req.body.name) {
     return res.status(400).json({ error: [{ message: 'Invalid request format' }] });
   }
